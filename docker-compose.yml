@@ -11,7 +11,7 @@ services:
       - psql:/var/lib/postgresql/data
       - ./postgres-initdb.d:/docker-entrypoint-initdb.d
     ports:
-      - 127.0.0.1:5432:5432
+      - 127.0.0.1:14032:5432
 
   redis:
     image: redis:3-alpine
@@ -19,7 +19,7 @@ services:
     volumes:
       - ./data/redis:/var/lib/redis/data
     ports:
-      - 127.0.0.1:6379:6379
+      - 127.0.0.1:16079:6379
 
   v1:
     build: v1/
@@ -29,7 +29,7 @@ services:
       C_FORCE_ROOT: "true"
       SERVER_NAME: localhost:5001
     ports: 
-      - 127.0.0.1:5001:5000
+      - 0.0.0.0:10001:5000
     links:
       - postgres:postgres
       - redis:redis
@@ -41,18 +41,22 @@ services:
       REDIS_URL: redis://redis:6379/0
       C_FORCE_ROOT: "true"
     ports: 
-      - 127.0.0.1:5002:5000
+      - 0.0.0.0:10002:5000
     links:
       - postgres:postgres
       - redis:redis
+    command: >
+       sh -c "python3 create_db.py admin@admin.com admin&& python3 manage.py db stamp head && python3 manage.py runserver -h 0.0.0.0"
 
   v2-frontend:
     image: node:7
     working_dir: /app
     environment:
-      API_HOST: localhost:5002
+            API_HOST: localhost:10002
+    links:
+      - v2-server:v2-server
     ports:
-      - 127.0.0.1:5003:4200
+      - 0.0.0.0:10003:4200
     volumes: 
       - ./v2-frontend:/app
     command: > 
