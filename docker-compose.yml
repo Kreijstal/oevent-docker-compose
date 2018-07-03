@@ -27,12 +27,14 @@ services:
       DATABASE_URL: postgresql://v1:v1-password@postgres:5432/oevent_1
       REDIS_URL: redis://redis:6379/0
       C_FORCE_ROOT: "true"
-      SERVER_NAME: localhost:5001
+      SERVER_NAME: domis.sytes.net:10001
     ports: 
       - 0.0.0.0:10001:5000
     links:
       - postgres:postgres
       - redis:redis
+    command: >
+      sh -c "printf \"admin@admin.com\nadmin\n\"|python create_db.py&&python manage.py db stamp head&&python manage.py runserver -h 0.0.0.0"
 
   v2-server:
     build: v2-server/
@@ -48,11 +50,25 @@ services:
     command: >
        sh -c "python3 create_db.py admin@admin.com admin&& python3 manage.py db stamp head && python3 manage.py runserver -h 0.0.0.0"
 
+  webapp:
+    build: webapp/
+    environment:
+      DATABASE_URL: postgresql://v2:v2-password@postgres:5432/oevent_2
+      REDIS_URL: redis://redis:6379/0
+      C_FORCE_ROOT: "true"
+    ports: 
+      - 0.0.0.0:10004:5000
+    links:
+      - postgres:postgres
+      - redis:redis
+
+
+
   v2-frontend:
-    image: node:7
+    image: node:8
     working_dir: /app
     environment:
-            API_HOST: localhost:10002
+            API_HOST: http://domis.sytes.net:10002
     links:
       - v2-server:v2-server
     ports:
@@ -64,6 +80,22 @@ services:
       yarn && 
       yarn global add ember-cli &&
       ember server"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - POSTGRES_USER=openevent
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=openevent
+    links:
+      - postgres:postgres
+    ports:
+      - 0.0.0.0:10005:80
+    logging:
+        driver: none    
+ 
 
 volumes:
   psql:
