@@ -69,6 +69,7 @@ services:
     working_dir: /app
     environment:
             API_HOST: http://domis.sytes.net:10002
+            CSPPermissive : "true" 
     links:
       - v2-server:v2-server
     ports:
